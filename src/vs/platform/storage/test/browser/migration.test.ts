@@ -7,7 +7,7 @@
 
 import * as assert from 'assert';
 import { StorageService } from "vs/platform/storage/common/storageService";
-import { parseStorage, migrateStorage } from "vs/platform/storage/common/migration";
+import { parseStorage, migrateStorageToMultiRootWorkspace } from "vs/platform/storage/common/migration";
 import URI from "vs/base/common/uri";
 import { StorageScope } from "vs/platform/storage/common/storage";
 import { startsWith } from "vs/base/common/strings";
@@ -164,7 +164,7 @@ suite('Storage Migration', () => {
 
 		const workspaceToMigrateTo = URI.from({ path: '1500007676869', scheme: 'root' }).toString();
 
-		migrateStorage(workspaceToMigrateFrom, workspaceToMigrateTo, storage);
+		migrateStorageToMultiRootWorkspace(workspaceToMigrateFrom, { id: '1500007676869', configPath: null }, storage);
 
 		const s2 = new StorageService(storage, storage, workspaceToMigrateTo);
 		const parsed = parseStorage(storage);
@@ -187,7 +187,7 @@ suite('Storage Migration', () => {
 
 		const workspaceToMigrateTo = URI.from({ path: '1500007676869', scheme: 'root' }).toString();
 
-		migrateStorage(workspaceToMigrateFrom, workspaceToMigrateTo, storage);
+		migrateStorageToMultiRootWorkspace(workspaceToMigrateFrom, { id: '1500007676869', configPath: null }, storage);
 
 		const s2 = new StorageService(storage, storage, workspaceToMigrateTo);
 		const parsed = parseStorage(storage);
@@ -210,7 +210,7 @@ suite('Storage Migration', () => {
 
 		const workspaceToMigrateTo = URI.from({ path: '1500007676869', scheme: 'root' }).toString();
 
-		migrateStorage(workspaceToMigrateFrom, workspaceToMigrateTo, storage);
+		migrateStorageToMultiRootWorkspace(workspaceToMigrateFrom, { id: '1500007676869', configPath: null }, storage);
 
 		const s2 = new StorageService(storage, storage, workspaceToMigrateTo);
 		const parsed = parseStorage(storage);
@@ -233,7 +233,7 @@ suite('Storage Migration', () => {
 
 		const workspaceToMigrateTo = URI.from({ path: '2500007676869', scheme: 'root' }).toString();
 
-		migrateStorage(workspaceToMigrateFrom, workspaceToMigrateTo, storage);
+		migrateStorageToMultiRootWorkspace(workspaceToMigrateFrom, { id: '2500007676869', configPath: null }, storage);
 
 		const s2 = new StorageService(storage, storage, workspaceToMigrateTo);
 		const parsed = parseStorage(storage);

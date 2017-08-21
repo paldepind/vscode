@@ -8,6 +8,7 @@
 import { IStorage, StorageService } from "vs/platform/storage/common/storageService";
 import { endsWith, startsWith, rtrim } from "vs/base/common/strings";
 import URI from "vs/base/common/uri";
+import { IWorkspaceIdentifier } from "vs/platform/workspaces/common/workspaces";
 
 /**
  * We currently store local storage with the following format:
@@ -169,35 +170,19 @@ export function parseStorage(storage: IStorage): IParsedStorage {
 	};
 }
 
-/**
- * Migrates storage of one workspace to another workspace. The following Ids are supported:
- * - multi root:<id>
- * - folder: <folderUri.toString()>
- * - empty: empty:<id>
- *
- * @param fromWorkspaceId the workspace id to migrate from
- * @param toWorkspaceId the workspace id to migrate to
- */
-export function migrateStorage(fromWorkspaceId: string, toWorkspaceId: string, storage: IStorage): void {
+export function migrateStorageToMultiRootWorkspace(fromWorkspaceId: string, toWorkspaceId: IWorkspaceIdentifier, storage: IStorage): void {
 	const parsed = parseStorage(storage);
 
+	const newStorageKey = URI.from({ path: toWorkspaceId.id, scheme: 'root' }).toString();
+
 	// Find in which location the workspace storage is to be migrated rom
-	let newStorageKey: string;
 	let storageForWorkspace: StorageObject;
 	if (parsed.multiRoot.has(fromWorkspaceId)) {
 		storageForWorkspace = parsed.multiRoot.get(fromWorkspaceId);
-		newStorageKey = toWorkspaceId;
 	} else if (parsed.empty.has(fromWorkspaceId)) {
 		storageForWorkspace = parsed.empty.get(fromWorkspaceId);
-		newStorageKey = toWorkspaceId;
 	} else if (parsed.folder.has(fromWorkspaceId)) {
 		storageForWorkspace = parsed.folder.get(fromWorkspaceId);
-
-		if (startsWith(toWorkspaceId, 'file:///')) {
-			newStorageKey = toWorkspaceId.substr('file:///'.length); // normal file paths are used without file protocol prefix
-		} else {
-			newStorageKey = toWorkspaceId; // this must be a UNC path where we preserve the file protocol prefix
-		}
 	}
 
 	// Migrate existing storage to new workspace id
