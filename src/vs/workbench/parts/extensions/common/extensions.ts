@@ -46,10 +46,10 @@ export interface IExtension {
 	disabledForWorkspace: boolean;
 	dependencies: string[];
 	telemetryData: any;
-	recommendationInfo?: any;
 	getManifest(): TPromise<IExtensionManifest>;
 	getReadme(): TPromise<string>;
 	getChangelog(): TPromise<string>;
+	updateTelemetryData(extra: any): any;
 }
 
 export interface IExtensionDependencies {

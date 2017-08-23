@@ -80,13 +80,8 @@ export class InstallAction extends Action {
 	}
 
 	run(): TPromise<any> {
-		if (this.extension.recommendationInfo) {
-			this.telemetryService.publicLog('extensionRecommendations:install', {
-				id: this.extension.id,
-				name: this.extension.name,
-				publisher: this.extension.publisher,
-				recommendationSource: this.extension.recommendationInfo['source']
-			});
+		if (this.extension.telemetryData && this.extension.telemetryData.recommendationInfo) {
+			this.telemetryService.publicLog('extensionRecommendations:install', this.extension.telemetryData);
 		}
 		return this.extensionsWorkbenchService.install(this.extension);
 	}

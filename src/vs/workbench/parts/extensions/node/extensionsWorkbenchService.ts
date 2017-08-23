@@ -44,6 +44,7 @@ class Extension implements IExtension {
 
 	public disabledGlobally = false;
 	public disabledForWorkspace = false;
+	private _telemetryData: any;
 
 	constructor(
 		private galleryService: IExtensionGalleryService,
@@ -161,13 +162,24 @@ class Extension implements IExtension {
 	}
 
 	get telemetryData(): any {
+		if (this._telemetryData) {
+			return this._telemetryData;
+		}
+
 		const { local, gallery } = this;
 
 		if (gallery) {
-			return getGalleryExtensionTelemetryData(gallery);
+			this._telemetryData = getGalleryExtensionTelemetryData(gallery);
 		} else {
-			return getLocalExtensionTelemetryData(local);
+			this._telemetryData = getLocalExtensionTelemetryData(local);
 		}
+
+		return this._telemetryData;
+	}
+
+	updateTelemetryData(extra: any): void {
+		this._telemetryData = this.telemetryData;
+		assign(this._telemetryData, extra);
 	}
 
 	getManifest(): TPromise<IExtensionManifest> {

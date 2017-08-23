@@ -298,7 +298,9 @@ export class ExtensionsListView extends CollapsibleView {
 						}
 
 						return this.extensionsWorkbenchService.queryGallery(assign(options, { names, pageSize: names.length }))
-							.then(pager => new PagedModel(pager || []));
+							.then(pager => this.addRecommendationInfo(new PagedModel(pager || []), {
+								recommendationInfo: { source: 'all' }
+							}));
 					});
 			});
 	}
@@ -321,7 +323,7 @@ export class ExtensionsListView extends CollapsibleView {
 
 				return this.extensionsWorkbenchService.queryGallery(assign(options, { names, pageSize: names.length }))
 					.then(pager => this.addRecommendationInfo(new PagedModel(pager || []), {
-						source: 'fileType'
+						recommendationInfo: { source: 'fileType' }
 					}));
 			});
 	}
@@ -339,7 +341,7 @@ export class ExtensionsListView extends CollapsibleView {
 
 				return this.extensionsWorkbenchService.queryGallery(assign(options, { names, pageSize: names.length }))
 					.then(pager => this.addRecommendationInfo(new PagedModel(pager || []), {
-						source: 'workspace'
+						recommendationInfo: { source: 'workspace' }
 					}));
 			});
 	}
@@ -358,10 +360,10 @@ export class ExtensionsListView extends CollapsibleView {
 			.then(result => new PagedModel(result));
 	}
 
-	// Updates the extensions in the given paged model with the recommendation info
+	// Updates the telemetryData of extensions in the given paged model with the recommendation info
 	private addRecommendationInfo(pagedModel: IPagedModel<IExtension>, recommendationInfo: any): IPagedModel<IExtension> {
 		for (let i = 0; i < pagedModel.length; i++) {
-			pagedModel.get(i).recommendationInfo = recommendationInfo;
+			pagedModel.get(i).updateTelemetryData(recommendationInfo);
 		}
 		return pagedModel;
 	}
