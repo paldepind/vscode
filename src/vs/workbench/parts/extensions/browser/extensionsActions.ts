@@ -35,6 +35,7 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { registerThemingParticipant, ITheme, ICssStyleCollector } from 'vs/platform/theme/common/themeService';
 import { buttonBackground, buttonForeground, buttonHoverBackground, contrastBorder, registerColor, foreground } from 'vs/platform/theme/common/colorRegistry';
 import { Color } from 'vs/base/common/color';
+import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export class InstallAction extends Action {
 
@@ -50,7 +51,8 @@ export class InstallAction extends Action {
 	set extension(extension: IExtension) { this._extension = extension; this.update(); }
 
 	constructor(
-		@IExtensionsWorkbenchService private extensionsWorkbenchService: IExtensionsWorkbenchService
+		@IExtensionsWorkbenchService private extensionsWorkbenchService: IExtensionsWorkbenchService,
+		@ITelemetryService private telemetryService: ITelemetryService
 	) {
 		super('extensions.install', InstallAction.InstallLabel, InstallAction.Class, false);
 
@@ -78,6 +80,14 @@ export class InstallAction extends Action {
 	}
 
 	run(): TPromise<any> {
+		if (this.extension.recommendationInfo) {
+			this.telemetryService.publicLog('extensionRecommendations:install', {
+				id: this.extension.id,
+				name: this.extension.name,
+				publisher: this.extension.publisher,
+				recommendationSource: this.extension.recommendationInfo['source']
+			});
+		}
 		return this.extensionsWorkbenchService.install(this.extension);
 	}
 

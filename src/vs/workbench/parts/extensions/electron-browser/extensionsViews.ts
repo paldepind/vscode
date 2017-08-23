@@ -320,7 +320,9 @@ export class ExtensionsListView extends CollapsibleView {
 				}
 
 				return this.extensionsWorkbenchService.queryGallery(assign(options, { names, pageSize: names.length }))
-					.then(pager => new PagedModel(pager));
+					.then(pager => this.addRecommendationInfo(new PagedModel(pager || []), {
+						source: 'fileType'
+					}));
 			});
 	}
 
@@ -336,7 +338,9 @@ export class ExtensionsListView extends CollapsibleView {
 				}
 
 				return this.extensionsWorkbenchService.queryGallery(assign(options, { names, pageSize: names.length }))
-					.then(pager => new PagedModel(pager));
+					.then(pager => this.addRecommendationInfo(new PagedModel(pager || []), {
+						source: 'workspace'
+					}));
 			});
 	}
 
@@ -352,6 +356,14 @@ export class ExtensionsListView extends CollapsibleView {
 
 		return this.extensionsWorkbenchService.queryGallery(assign(options, { names, pageSize: names.length }))
 			.then(result => new PagedModel(result));
+	}
+
+	// Updates the extensions in the given paged model with the recommendation info
+	private addRecommendationInfo(pagedModel: IPagedModel<IExtension>, recommendationInfo: any): IPagedModel<IExtension> {
+		for (let i = 0; i < pagedModel.length; i++) {
+			pagedModel.get(i).recommendationInfo = recommendationInfo;
+		}
+		return pagedModel;
 	}
 
 	private setModel(model: IPagedModel<IExtension>) {
