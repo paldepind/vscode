@@ -84,10 +84,18 @@ export class ExtensionTipsService implements IExtensionTipsService {
 		}, err => []);
 	}
 
-	getRecommendations(): string[] {
+	getRecommendations(): { [type: string]: string[]; } {
 		const allRecomendations = this._getAllRecommendationsInProduct();
-		return Object.keys(this._recommendations)
+		const fileBased = Object.keys(this._recommendations)
 			.filter(recommendation => allRecomendations.indexOf(recommendation) !== -1);
+
+		const exeBased = Object.keys(this._recommendations)
+			.filter(recommendation => product.exeBasedExtensionTips.hasOwnProperty(recommendation));
+
+		return {
+			fileBased,
+			exeBased
+		};
 	}
 
 	getKeymapRecommendations(): string[] {
@@ -96,7 +104,7 @@ export class ExtensionTipsService implements IExtensionTipsService {
 
 	private _getAllRecommendationsInProduct(): string[] {
 		if (!this._allRecommendations) {
-			this._allRecommendations = [...Object.keys(this.importantRecommendations), ...Object.keys(product.exeBasedExtensionTips)];
+			this._allRecommendations = [...Object.keys(this.importantRecommendations)];
 			forEach(this._availableRecommendations, ({ value: ids }) => {
 				this._allRecommendations.push(...ids);
 			});
