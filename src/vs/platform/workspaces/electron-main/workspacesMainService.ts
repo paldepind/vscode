@@ -5,7 +5,7 @@
 
 'use strict';
 
-import { IWorkspacesMainService, IWorkspaceIdentifier, IStoredWorkspace, WORKSPACE_EXTENSION, IWorkspaceSavedEvent, UNTITLED_WORKSPACE_NAME } from 'vs/platform/workspaces/common/workspaces';
+import { IWorkspacesMainService, IWorkspaceIdentifier, IStoredWorkspace, WORKSPACE_EXTENSION, IWorkspaceSavedEvent, UNTITLED_WORKSPACE_NAME, IResolvedWorkspace } from 'vs/platform/workspaces/common/workspaces';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { isParent } from 'vs/platform/files/common/files';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
@@ -19,6 +19,7 @@ import Event, { Emitter } from 'vs/base/common/event';
 import { ILogService } from 'vs/platform/log/common/log';
 import { isEqual } from 'vs/base/common/paths';
 import { coalesce } from 'vs/base/common/arrays';
+import { createHash } from 'crypto';
 
 export class WorkspacesMainService implements IWorkspacesMainService {
 
@@ -47,7 +48,7 @@ export class WorkspacesMainService implements IWorkspacesMainService {
 		return this._onWorkspaceDeleted.event;
 	}
 
-	public resolveWorkspaceSync(path: string): IStoredWorkspace {
+	public resolveWorkspaceSync(path: string): IResolvedWorkspace {
 		const isWorkspace = this.isInsideWorkspacesHome(path) || extname(path) === `.${WORKSPACE_EXTENSION}`;
 		if (!isWorkspace) {
 			return null; // does not look like a valid workspace config file
@@ -55,13 +56,17 @@ export class WorkspacesMainService implements IWorkspacesMainService {
 
 		try {
 			const workspace = JSON.parse(readFileSync(path, 'utf8')) as IStoredWorkspace;
-			if (typeof workspace.id !== 'string' || !Array.isArray(workspace.folders) || workspace.folders.length === 0) {
+			if (!Array.isArray(workspace.folders) || workspace.folders.length === 0) {
 				this.logService.log(`${path} looks like an invalid workspace file.`);
 
 				return null; // looks like an invalid workspace file
 			}
 
-			return workspace;
+			return {
+				id: this.getWorkspaceId(path),
+				configPath: path,
+				folders: workspace.folders
+			};
 		} catch (error) {
 			this.logService.log(`${path} cannot be parsed as JSON file (${error}).`);
 
@@ -78,25 +83,28 @@ export class WorkspacesMainService implements IWorkspacesMainService {
 			return TPromise.wrapError(new Error('Creating a workspace requires at least one folder.'));
 		}
 
-		const workspaceId = this.nextWorkspaceId();
-		const workspaceConfigFolder = join(this.workspacesHome, workspaceId);
-		const workspaceConfigPath = join(workspaceConfigFolder, UNTITLED_WORKSPACE_NAME);
+		const randomId = (Date.now() + Math.round(Math.random() * 1000)).toString();
+		const untitledWorkspaceConfigFolder = join(this.workspacesHome, randomId);
+		const untitledWorkspaceConfigPath = join(untitledWorkspaceConfigFolder, UNTITLED_WORKSPACE_NAME);
 
-		return mkdirp(workspaceConfigFolder).then(() => {
+		return mkdirp(untitledWorkspaceConfigFolder).then(() => {
 			const storedWorkspace: IStoredWorkspace = {
-				id: workspaceId,
 				folders
 			};
 
-			return writeFile(workspaceConfigPath, JSON.stringify(storedWorkspace, null, '\t')).then(() => ({
-				id: workspaceId,
-				configPath: workspaceConfigPath
+			return writeFile(untitledWorkspaceConfigPath, JSON.stringify(storedWorkspace, null, '\t')).then(() => ({
+				id: this.getWorkspaceId(untitledWorkspaceConfigPath),
+				configPath: untitledWorkspaceConfigPath
 			}));
 		});
 	}
 
-	private nextWorkspaceId(): string {
-		return (Date.now() + Math.round(Math.random() * 1000)).toString();
+	private getWorkspaceId(workspaceConfigPath: string): string {
+		if (!isLinux) {
+			workspaceConfigPath = workspaceConfigPath.toLowerCase(); // sanitize for platform file system
+		}
+
+		return createHash('md5').update(workspaceConfigPath).digest('hex');
 	}
 
 	public isUntitledWorkspace(workspace: IWorkspaceIdentifier): boolean {
@@ -112,8 +120,7 @@ export class WorkspacesMainService implements IWorkspacesMainService {
 
 		// Copy to new target
 		return nfcall(copy, workspace.configPath, target).then(() => {
-			const savedWorkspace = this.resolveWorkspaceSync(target);
-			const savedWorkspaceIdentifier = { id: savedWorkspace.id, configPath: target };
+			const savedWorkspaceIdentifier = { id: this.getWorkspaceId(target), configPath: target };
 
 			// Event
 			this._onWorkspaceSaved.fire({ workspace: savedWorkspaceIdentifier, oldConfigPath: workspace.configPath });
@@ -161,7 +168,7 @@ export class WorkspacesMainService implements IWorkspacesMainService {
 				return null; // invalid workspace
 			}
 
-			return { id: workspace.id, configPath: untitledWorkspacePath };
+			return { id: this.getWorkspaceId(untitledWorkspacePath), configPath: untitledWorkspacePath };
 		}));
 
 		return untitledWorkspaces;

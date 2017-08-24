@@ -33,9 +33,10 @@ export interface IWorkspaceIdentifier {
 }
 
 export interface IStoredWorkspace {
-	id: string;
 	folders: string[];
 }
+
+export interface IResolvedWorkspace extends IWorkspaceIdentifier, IStoredWorkspace { }
 
 export interface IWorkspaceSavedEvent {
 	workspace: IWorkspaceIdentifier;
@@ -48,7 +49,7 @@ export interface IWorkspacesMainService extends IWorkspacesService {
 	onWorkspaceSaved: Event<IWorkspaceSavedEvent>;
 	onWorkspaceDeleted: Event<IWorkspaceIdentifier>;
 
-	resolveWorkspaceSync(path: string): IStoredWorkspace;
+	resolveWorkspaceSync(path: string): IResolvedWorkspace;
 	isUntitledWorkspace(workspace: IWorkspaceIdentifier): boolean;
 
 	deleteUntitledWorkspaceSync(workspace: IWorkspaceIdentifier): void;
